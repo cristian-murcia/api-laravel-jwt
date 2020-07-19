@@ -1,0 +1,6 @@
+COMANDOS DE LARAVEL
+
+composer create-project laravel/laravel api-rest-laravel "5.7.*" --prefer-dist = Crear nuevo proyecto con tal version.
+
+php artisan make:controller nombre_controlador = Se crea un nuevo controlador.
+php artisan make:model nombre_modelo = Se crea un nuevo modelo.
