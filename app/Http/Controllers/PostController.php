@@ -61,9 +61,8 @@ class PostController extends Controller {
         $params_array = json_decode($json, true);
 
         if (!empty($params_array)) {
-            $token = $request->header('Authorization', null);
-            $jwtAuth = new \App\Helpers\JwtAuth();
-            $user = $jwtAuth->checkToken($token, true);
+
+            $user = $this->getIdentity($request);
 
             $validate = \Validator::make($params_array, [
                         'title' => 'required',
@@ -106,7 +105,90 @@ class PostController extends Controller {
 
         return response()->json($data, $data['code']);
     }
-    
-    
+
+    /*
+     * Metodo para actualizar un post
+     */
+
+    public function update($id, Request $request) {
+        $json = $request->input('json', null);
+        $params_array = json_decode($json, true);
+
+        $data = array(
+            'code' => 404,
+            'status' => 'error',
+            'message' => 'Datos enviados incorrectos'
+        );
+
+        if (!empty($params_array)) {
+
+            $validate = \Validator::make($params_array, [
+                        'title' => 'required',
+                        'content' => 'required',
+                        'category_id' => 'required',
+            ]);
+
+            if ($validate->fails()) {
+                $data['errors'] = $validate->errors();
+                return response()->json($data, $data['code']);
+            }
+
+            unset($params_array['id']);
+            unset($params_array['user_id']);
+            unset($params_array['created_at']);
+            unset($params_array['user']);
+
+            $postOld = Post::find($id);
+            $post = Post::where('id', $id)->update($params_array);
+
+            $data = array(
+                'code' => 200,
+                'status' => 'success',
+                'message' => 'El post ha sido actualizado',
+                'postOld' => $postOld,
+                'postNew' => $params_array
+            );
+        }
+
+        return response()->json($data, $data['code']);
+    }
+
+    /*
+     * Metodo para borrar un post
+     */
+
+    public function destroy($id, Request $request) {
+
+        $user = $this->getIdentity($request);
+        $post = Post::where('id', $id)
+                    ->where('user_id', $user->sub)
+                    ->first();
+
+        if (is_object($post)) {
+            $post->delete();
+
+            $data = array(
+                'code' => 200,
+                'status' => 'success',
+                'message' => 'El post ha sido eliminado'
+            );
+        } else {
+            $data = array(
+                'code' => 404,
+                'status' => 'error',
+                'message' => 'El post no se ha encontrado'
+            );
+        }
+
+        return response()->json($data, $data['code']);
+    }
+
+    private function getIdentity($request) {
+        $token = $request->header('Authorization', null);
+        $jwtAuth = new \App\Helpers\JwtAuth();
+        $user = $jwtAuth->checkToken($token, true);
+
+        return $user;
+    }
 
 }
