@@ -32,5 +32,8 @@ Route::get('/api/user/avatar/{filename}', 'UserController@getimage');
 Route::get('/api/user/detail/{id}', 'UserController@details');
 
 //Rutas del Controlador de Categorias
-Route::resource('/api/category', 'categoryController');
+Route::resource('/api/category', 'CategoryController');
+
+//Rutas del Controlador de Post
+Route::resource('/api/post', 'PostController');
 
