@@ -9,7 +9,12 @@ use App\Post;
 class PostController extends Controller {
 
     public function __construct() {
-        $this->middleware('api.auth', ['except' => ['index', 'show']]);
+        $this->middleware('api.auth', ['except' => ['index',
+                'show',
+                'getImage',
+                'getPostByCategory',
+                'getPostByUser'
+        ]]);
     }
 
     /*
@@ -138,8 +143,14 @@ class PostController extends Controller {
             unset($params_array['created_at']);
             unset($params_array['user']);
 
+            $user = $this->getIdentity($request);
+
             $postOld = Post::find($id);
-            $post = Post::where('id', $id)->update($params_array);
+            $where = [
+                'id' => $id,
+                'user_id' => $user->sub
+            ];
+            $post = Post::updateOrCreate($where, $params_array);
 
             $data = array(
                 'code' => 200,
@@ -161,8 +172,8 @@ class PostController extends Controller {
 
         $user = $this->getIdentity($request);
         $post = Post::where('id', $id)
-                    ->where('user_id', $user->sub)
-                    ->first();
+                ->where('user_id', $user->sub)
+                ->first();
 
         if (is_object($post)) {
             $post->delete();
@@ -189,6 +200,80 @@ class PostController extends Controller {
         $user = $jwtAuth->checkToken($token, true);
 
         return $user;
+    }
+
+    /*
+     * Metodo para la subida de imagenes
+     */
+
+    public function upload(Request $request) {
+
+        $image = $request->file('file0');
+
+        $validate = \Validator::make($request->all(), [
+                    'file0' => 'required|image|mimes:jpg,jpeg,png,gif'
+        ]);
+
+        if (!$image || $validate->fails()) {
+            $data = array(
+                'code' => 404,
+                'status' => 'error',
+                'message' => 'La imagen no es permitida',
+                'error' => $validate->errors()
+            );
+        } else {
+            $image_name = time() . $image->getClientOriginalName();
+            \Storage::disk('images')->put($image_name, \File::get($image));
+
+            $data = array(
+                'code' => 200,
+                'status' => 'success',
+                'message' => 'La imagen ha sido cargada',
+                'image' => $image_name
+            );
+        }
+
+        return response()->json($data, $data['code']);
+    }
+
+    /*
+     * Traida de imagen de post
+     */
+
+    public function getImage($filename) {
+
+        $isset = \Storage::disk('images')->exists($filename);
+
+        if ($isset) {
+            $file = \Storage::disk('images')->get($filename);
+            return Response($file, 200);
+        } else {
+            $data = array(
+                'code' => 404,
+                'status' => 'error',
+                'message' => 'La imagen no existe'
+            );
+        }
+
+        return response()->json($data, $data['code']);
+    }
+
+    public function getPostByCategory($id) {
+        $posts = Post::where('category_id', $id)->get();
+
+        return response()->json([
+                    'status' => 'success',
+                    'posts' => $posts
+                        ], 200);
+    }
+
+    public function getPostByUser($id) {
+        $posts = Post::where('user_id', $id)->get();
+
+        return response()->json([
+                    'status' => 'success',
+                    'posts' => $posts
+                        ], 200);
     }
 
 }
