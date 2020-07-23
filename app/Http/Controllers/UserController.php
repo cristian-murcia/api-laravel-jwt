@@ -136,8 +136,8 @@ class UserController extends Controller {
             $data = array(
                 'code' => 200,
                 'status' => 'success',
-                'user old' => $user,
-                'user new' => $params_array
+                'user' => $user,
+                'changes' => $params_array
             );
         } else {
             $data = array(

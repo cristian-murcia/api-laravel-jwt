@@ -33,6 +33,8 @@ class JwtAuth {
                 'surname' => $user->surname,
                 'email' => $user->email,
                 'password' => $user->password,
+                'description' => $user->description,
+                'image' => $user->image,
                 'iat' => time(),
                 'exp' => time() + (7 * 24 * 60 * 60)
             );
@@ -42,7 +44,7 @@ class JwtAuth {
             //Devolver los datos descodificados o el token
             if (is_null($getToken)) {
                 $data = $jwt;
-            } else {
+            } else { 
                 $data = $decode;
             }
         } else {
